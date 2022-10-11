@@ -39,7 +39,7 @@ func (svr *Service) RunDashboardServer(address string) (err error) {
 	router.HandleFunc("/healthz", svr.Healthz)
 
 	// debug
-	if svr.cfg.PprofEnable {
+	if svr.Cfg.PprofEnable {
 		router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 		router.HandleFunc("/debug/pprof/profile", pprof.Profile)
 		router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
@@ -49,11 +49,11 @@ func (svr *Service) RunDashboardServer(address string) (err error) {
 
 	subRouter := router.NewRoute().Subrouter()
 
-	user, passwd := svr.cfg.DashboardUser, svr.cfg.DashboardPwd
+	user, passwd := svr.Cfg.DashboardUser, svr.Cfg.DashboardPwd
 	subRouter.Use(frpNet.NewHTTPAuthMiddleware(user, passwd).Middleware)
 
 	// metrics
-	if svr.cfg.EnablePrometheus {
+	if svr.Cfg.EnablePrometheus {
 		subRouter.Handle("/metrics", promhttp.Handler())
 	}
 
@@ -82,8 +82,8 @@ func (svr *Service) RunDashboardServer(address string) (err error) {
 		return err
 	}
 
-	if svr.cfg.DashboardTLSMode {
-		cert, err := tls.LoadX509KeyPair(svr.cfg.DashboardTLSCertFile, svr.cfg.DashboardTLSKeyFile)
+	if svr.Cfg.DashboardTLSMode {
+		cert, err := tls.LoadX509KeyPair(svr.Cfg.DashboardTLSCertFile, svr.Cfg.DashboardTLSKeyFile)
 		if err != nil {
 			return err
 		}

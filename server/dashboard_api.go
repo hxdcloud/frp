@@ -196,7 +196,7 @@ func (svr *Service) GetProxyStatsByType(proxyType string) (proxyInfos []*ProxySt
 	proxyInfos = make([]*ProxyStatsInfo, 0, len(proxyStats))
 	for _, ps := range proxyStats {
 		proxyInfo := &ProxyStatsInfo{}
-		if pxy, ok := svr.pxyManager.GetByName(ps.Name); ok {
+		if pxy, ok := svr.PxyManager.GetByName(ps.Name); ok {
 			content, err := json.Marshal(pxy.GetConf())
 			if err != nil {
 				log.Warn("marshal proxy [%s] conf info error: %v", ps.Name, err)
@@ -267,7 +267,7 @@ func (svr *Service) GetProxyStatsByTypeAndName(proxyType string, proxyName strin
 		code = 404
 		msg = "no proxy info found"
 	} else {
-		if pxy, ok := svr.pxyManager.GetByName(proxyName); ok {
+		if pxy, ok := svr.PxyManager.GetByName(proxyName); ok {
 			content, err := json.Marshal(pxy.GetConf())
 			if err != nil {
 				log.Warn("marshal proxy [%s] conf info error: %v", ps.Name, err)
