@@ -71,15 +71,15 @@ func (svr *Service) APIServerInfo(w http.ResponseWriter, r *http.Request) {
 	serverStats := mem.StatsCollector.GetServer()
 	svrResp := serverInfoResp{
 		Version:           version.Full(),
-		BindPort:          svr.cfg.BindPort,
-		BindUDPPort:       svr.cfg.BindUDPPort,
-		VhostHTTPPort:     svr.cfg.VhostHTTPPort,
-		VhostHTTPSPort:    svr.cfg.VhostHTTPSPort,
-		KCPBindPort:       svr.cfg.KCPBindPort,
-		SubdomainHost:     svr.cfg.SubDomainHost,
-		MaxPoolCount:      svr.cfg.MaxPoolCount,
-		MaxPortsPerClient: svr.cfg.MaxPortsPerClient,
-		HeartBeatTimeout:  svr.cfg.HeartbeatTimeout,
+		BindPort:          svr.Cfg.BindPort,
+		BindUDPPort:       svr.Cfg.BindUDPPort,
+		VhostHTTPPort:     svr.Cfg.VhostHTTPPort,
+		VhostHTTPSPort:    svr.Cfg.VhostHTTPSPort,
+		KCPBindPort:       svr.Cfg.KCPBindPort,
+		SubdomainHost:     svr.Cfg.SubDomainHost,
+		MaxPoolCount:      svr.Cfg.MaxPoolCount,
+		MaxPortsPerClient: svr.Cfg.MaxPortsPerClient,
+		HeartBeatTimeout:  svr.Cfg.HeartbeatTimeout,
 
 		TotalTrafficIn:  serverStats.TotalTrafficIn,
 		TotalTrafficOut: serverStats.TotalTrafficOut,
@@ -185,13 +185,13 @@ func (svr *Service) APIProxyByType(w http.ResponseWriter, r *http.Request) {
 	log.Info("Http request: [%s]", r.URL.Path)
 
 	proxyInfoResp := GetProxyInfoResp{}
-	proxyInfoResp.Proxies = svr.getProxyStatsByType(proxyType)
+	proxyInfoResp.Proxies = svr.GetProxyStatsByType(proxyType)
 
 	buf, _ := json.Marshal(&proxyInfoResp)
 	res.Msg = string(buf)
 }
 
-func (svr *Service) getProxyStatsByType(proxyType string) (proxyInfos []*ProxyStatsInfo) {
+func (svr *Service) GetProxyStatsByType(proxyType string) (proxyInfos []*ProxyStatsInfo) {
 	proxyStats := mem.StatsCollector.GetProxiesByType(proxyType)
 	proxyInfos = make([]*ProxyStatsInfo, 0, len(proxyStats))
 	for _, ps := range proxyStats {
@@ -251,7 +251,7 @@ func (svr *Service) APIProxyByTypeAndName(w http.ResponseWriter, r *http.Request
 	log.Info("Http request: [%s]", r.URL.Path)
 
 	var proxyStatsResp GetProxyStatsResp
-	proxyStatsResp, res.Code, res.Msg = svr.getProxyStatsByTypeAndName(proxyType, name)
+	proxyStatsResp, res.Code, res.Msg = svr.GetProxyStatsByTypeAndName(proxyType, name)
 	if res.Code != 200 {
 		return
 	}
@@ -260,7 +260,7 @@ func (svr *Service) APIProxyByTypeAndName(w http.ResponseWriter, r *http.Request
 	res.Msg = string(buf)
 }
 
-func (svr *Service) getProxyStatsByTypeAndName(proxyType string, proxyName string) (proxyInfo GetProxyStatsResp, code int, msg string) {
+func (svr *Service) GetProxyStatsByTypeAndName(proxyType string, proxyName string) (proxyInfo GetProxyStatsResp, code int, msg string) {
 	proxyInfo.Name = proxyName
 	ps := mem.StatsCollector.GetProxiesByTypeAndName(proxyType, proxyName)
 	if ps == nil {
