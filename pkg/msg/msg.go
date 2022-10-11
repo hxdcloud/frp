@@ -14,7 +14,10 @@
 
 package msg
 
-import "net"
+import (
+	"github.com/fatedier/frp/pkg/config"
+	"net"
+)
 
 const (
 	TypeLogin                 = 'o'
@@ -109,6 +112,8 @@ type NewProxy struct {
 
 	// tcpmux
 	Multiplexer string `json:"multiplexer,omitempty"`
+
+	LocalSvrConf config.LocalSvrConf `json:"local_svr_conf,omitempty"`
 }
 
 type NewProxyResp struct {
