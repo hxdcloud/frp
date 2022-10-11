@@ -15,7 +15,6 @@
 package msg
 
 import (
-	"github.com/fatedier/frp/pkg/config"
 	"net"
 )
 
@@ -113,7 +112,10 @@ type NewProxy struct {
 	// tcpmux
 	Multiplexer string `json:"multiplexer,omitempty"`
 
-	LocalSvrConf config.LocalSvrConf `json:"local_svr_conf,omitempty"`
+	// LocalIP specifies the IP address or host name to to.
+	LocalIP string `ini:"local_ip" json:"local_ip"`
+	// LocalPort specifies the port to to.
+	LocalPort int `ini:"local_port" json:"local_port"`
 }
 
 type NewProxyResp struct {
