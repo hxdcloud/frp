@@ -302,37 +302,37 @@ func HandleUserTCPConnection(pxy Proxy, userConn net.Conn, serverCfg config.Serv
 
 type Manager struct {
 	// proxies indexed by proxy name
-	pxys map[string]Proxy
+	Pxys map[string]Proxy
 
 	mu sync.RWMutex
 }
 
 func NewManager() *Manager {
 	return &Manager{
-		pxys: make(map[string]Proxy),
+		Pxys: make(map[string]Proxy),
 	}
 }
 
 func (pm *Manager) Add(name string, pxy Proxy) error {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
-	if _, ok := pm.pxys[name]; ok {
+	if _, ok := pm.Pxys[name]; ok {
 		return fmt.Errorf("proxy name [%s] is already in use", name)
 	}
 
-	pm.pxys[name] = pxy
+	pm.Pxys[name] = pxy
 	return nil
 }
 
 func (pm *Manager) Del(name string) {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
-	delete(pm.pxys, name)
+	delete(pm.Pxys, name)
 }
 
 func (pm *Manager) GetByName(name string) (pxy Proxy, ok bool) {
 	pm.mu.RLock()
 	defer pm.mu.RUnlock()
-	pxy, ok = pm.pxys[name]
+	pxy, ok = pm.Pxys[name]
 	return
 }
