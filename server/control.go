@@ -102,10 +102,10 @@ type Control struct {
 	conn net.Conn
 
 	// put a message in this channel to send it over control connection to client
-	sendCh chan (msg.Message)
+	SendCh chan (msg.Message)
 
 	// read from this channel to get the next message sent by client
-	readCh chan (msg.Message)
+	ReadCh chan (msg.Message)
 
 	// work connections
 	workConnCh chan net.Conn
@@ -165,8 +165,8 @@ func NewControl(
 		authVerifier:    authVerifier,
 		conn:            ctlConn,
 		LoginMsg:        LoginMsg,
-		sendCh:          make(chan msg.Message, 10),
-		readCh:          make(chan msg.Message, 10),
+		SendCh:          make(chan msg.Message, 10),
+		ReadCh:          make(chan msg.Message, 10),
 		workConnCh:      make(chan net.Conn, poolCount+10),
 		proxies:         make(map[string]proxy.Proxy),
 		poolCount:       poolCount,
@@ -196,7 +196,7 @@ func (ctl *Control) Start() {
 
 	go ctl.writer()
 	for i := 0; i < ctl.poolCount; i++ {
-		ctl.sendCh <- &msg.ReqWorkConn{}
+		ctl.SendCh <- &msg.ReqWorkConn{}
 	}
 
 	go ctl.manager()
@@ -248,7 +248,7 @@ func (ctl *Control) GetWorkConn() (workConn net.Conn, err error) {
 	default:
 		// no work connections available in the poll, send message to frpc to get more
 		if err = errors.PanicToError(func() {
-			ctl.sendCh <- &msg.ReqWorkConn{}
+			ctl.SendCh <- &msg.ReqWorkConn{}
 		}); err != nil {
 			return nil, fmt.Errorf("control is already closed")
 		}
@@ -270,7 +270,7 @@ func (ctl *Control) GetWorkConn() (workConn net.Conn, err error) {
 
 	// When we get a work connection from pool, replace it with a new one.
 	_ = errors.PanicToError(func() {
-		ctl.sendCh <- &msg.ReqWorkConn{}
+		ctl.SendCh <- &msg.ReqWorkConn{}
 	})
 	return
 }
@@ -301,7 +301,7 @@ func (ctl *Control) writer() {
 		return
 	}
 	for {
-		m, ok := <-ctl.sendCh
+		m, ok := <-ctl.SendCh
 		if !ok {
 			xl.Info("control writer is closing")
 			return
@@ -339,7 +339,7 @@ func (ctl *Control) reader() {
 			return
 		}
 
-		ctl.readCh <- m
+		ctl.ReadCh <- m
 	}
 }
 
@@ -357,10 +357,10 @@ func (ctl *Control) stoper() {
 	ctl.conn.Close()
 	ctl.readerShutdown.WaitDone()
 
-	close(ctl.readCh)
+	close(ctl.ReadCh)
 	ctl.managerShutdown.WaitDone()
 
-	close(ctl.sendCh)
+	close(ctl.SendCh)
 	ctl.writerShutdown.WaitDone()
 
 	ctl.mu.Lock()
@@ -430,7 +430,7 @@ func (ctl *Control) manager() {
 				xl.Warn("heartbeat timeout")
 				return
 			}
-		case rawMsg, ok := <-ctl.readCh:
+		case rawMsg, ok := <-ctl.ReadCh:
 			if !ok {
 				return
 			}
@@ -464,7 +464,7 @@ func (ctl *Control) manager() {
 					xl.Info("new proxy [%s] type [%s] success", m.ProxyName, m.ProxyType)
 					metrics.Server.NewProxy(m.ProxyName, m.ProxyType)
 				}
-				ctl.sendCh <- resp
+				ctl.SendCh <- resp
 			case *msg.CloseProxy:
 				_ = ctl.CloseProxy(m)
 				xl.Info("close proxy [%s] success", m.ProxyName)
@@ -484,14 +484,14 @@ func (ctl *Control) manager() {
 				}
 				if err != nil {
 					xl.Warn("received invalid ping: %v", err)
-					ctl.sendCh <- &msg.Pong{
+					ctl.SendCh <- &msg.Pong{
 						Error: util.GenerateResponseErrorString("invalid ping", err, ctl.serverCfg.DetailedErrorsToClient),
 					}
 					return
 				}
 				ctl.LastPing = time.Now()
 				xl.Debug("receive heartbeat")
-				ctl.sendCh <- &msg.Pong{}
+				ctl.SendCh <- &msg.Pong{}
 			}
 		}
 	}
