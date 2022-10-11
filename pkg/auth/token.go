@@ -48,8 +48,8 @@ func NewTokenAuth(baseCfg BaseConfig, cfg TokenConfig) *TokenAuthSetterVerifier 
 	}
 }
 
-func (auth *TokenAuthSetterVerifier) SetLogin(loginMsg *msg.Login) (err error) {
-	loginMsg.PrivilegeKey = util.GetAuthKey(auth.token, loginMsg.Timestamp)
+func (auth *TokenAuthSetterVerifier) SetLogin(LoginMsg *msg.Login) (err error) {
+	LoginMsg.PrivilegeKey = util.GetAuthKey(auth.token, LoginMsg.Timestamp)
 	return nil
 }
 
@@ -73,8 +73,8 @@ func (auth *TokenAuthSetterVerifier) SetNewWorkConn(newWorkConnMsg *msg.NewWorkC
 	return nil
 }
 
-func (auth *TokenAuthSetterVerifier) VerifyLogin(loginMsg *msg.Login) error {
-	if util.GetAuthKey(auth.token, loginMsg.Timestamp) != loginMsg.PrivilegeKey {
+func (auth *TokenAuthSetterVerifier) VerifyLogin(LoginMsg *msg.Login) error {
+	if util.GetAuthKey(auth.token, LoginMsg.Timestamp) != LoginMsg.PrivilegeKey {
 		return fmt.Errorf("token in login doesn't match token from configuration")
 	}
 	return nil

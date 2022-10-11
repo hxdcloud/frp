@@ -51,7 +51,7 @@ func init() {
 
 // Service is a client service.
 type Service struct {
-	// uniq id got from frps, attach it in loginMsg
+	// uniq id got from frps, attach it in LoginMsg
 	runID string
 
 	// manager control connection with server
@@ -316,7 +316,7 @@ func (svr *Service) login() (conn net.Conn, session *fmux.Session, err error) {
 		conn = stream
 	}
 
-	loginMsg := &msg.Login{
+	LoginMsg := &msg.Login{
 		Arch:      runtime.GOARCH,
 		Os:        runtime.GOOS,
 		PoolCount: svr.cfg.PoolCount,
@@ -328,11 +328,11 @@ func (svr *Service) login() (conn net.Conn, session *fmux.Session, err error) {
 	}
 
 	// Add auth
-	if err = svr.authSetter.SetLogin(loginMsg); err != nil {
+	if err = svr.authSetter.SetLogin(LoginMsg); err != nil {
 		return
 	}
 
-	if err = msg.WriteMsg(conn, loginMsg); err != nil {
+	if err = msg.WriteMsg(conn, LoginMsg); err != nil {
 		return
 	}
 

@@ -121,8 +121,8 @@ func (auth *OidcAuthProvider) generateAccessToken() (accessToken string, err err
 	return tokenObj.AccessToken, nil
 }
 
-func (auth *OidcAuthProvider) SetLogin(loginMsg *msg.Login) (err error) {
-	loginMsg.PrivilegeKey, err = auth.generateAccessToken()
+func (auth *OidcAuthProvider) SetLogin(LoginMsg *msg.Login) (err error) {
+	LoginMsg.PrivilegeKey, err = auth.generateAccessToken()
 	return err
 }
 
@@ -168,8 +168,8 @@ func NewOidcAuthVerifier(baseCfg BaseConfig, cfg OidcServerConfig) *OidcAuthCons
 	}
 }
 
-func (auth *OidcAuthConsumer) VerifyLogin(loginMsg *msg.Login) (err error) {
-	token, err := auth.verifier.Verify(context.Background(), loginMsg.PrivilegeKey)
+func (auth *OidcAuthConsumer) VerifyLogin(LoginMsg *msg.Login) (err error) {
+	token, err := auth.verifier.Verify(context.Background(), LoginMsg.PrivilegeKey)
 	if err != nil {
 		return fmt.Errorf("invalid OIDC token in login: %v", err)
 	}

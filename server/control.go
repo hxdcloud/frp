@@ -43,14 +43,14 @@ import (
 
 type ControlManager struct {
 	// controls indexed by run id
-	ctlsByRunID map[string]*Control
+	CtlsByRunID map[string]*Control
 
 	mu sync.RWMutex
 }
 
 func NewControlManager() *ControlManager {
 	return &ControlManager{
-		ctlsByRunID: make(map[string]*Control),
+		CtlsByRunID: make(map[string]*Control),
 	}
 }
 
@@ -58,11 +58,11 @@ func (cm *ControlManager) Add(runID string, ctl *Control) (oldCtl *Control) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	oldCtl, ok := cm.ctlsByRunID[runID]
+	oldCtl, ok := cm.CtlsByRunID[runID]
 	if ok {
 		oldCtl.Replaced(ctl)
 	}
-	cm.ctlsByRunID[runID] = ctl
+	cm.CtlsByRunID[runID] = ctl
 	return
 }
 
@@ -70,15 +70,15 @@ func (cm *ControlManager) Add(runID string, ctl *Control) (oldCtl *Control) {
 func (cm *ControlManager) Del(runID string, ctl *Control) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
-	if c, ok := cm.ctlsByRunID[runID]; ok && c == ctl {
-		delete(cm.ctlsByRunID, runID)
+	if c, ok := cm.CtlsByRunID[runID]; ok && c == ctl {
+		delete(cm.CtlsByRunID, runID)
 	}
 }
 
 func (cm *ControlManager) GetByID(runID string) (ctl *Control, ok bool) {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
-	ctl, ok = cm.ctlsByRunID[runID]
+	ctl, ok = cm.CtlsByRunID[runID]
 	return
 }
 
@@ -87,7 +87,7 @@ type Control struct {
 	rc *controller.ResourceController
 
 	// proxy manager
-	pxyManager *proxy.Manager
+	PxyManager *proxy.Manager
 
 	// plugin manager
 	pluginManager *plugin.Manager
@@ -96,7 +96,7 @@ type Control struct {
 	authVerifier auth.Verifier
 
 	// login message
-	loginMsg *msg.Login
+	LoginMsg *msg.Login
 
 	// control connection
 	conn net.Conn
@@ -147,24 +147,24 @@ type Control struct {
 func NewControl(
 	ctx context.Context,
 	rc *controller.ResourceController,
-	pxyManager *proxy.Manager,
+	PxyManager *proxy.Manager,
 	pluginManager *plugin.Manager,
 	authVerifier auth.Verifier,
 	ctlConn net.Conn,
-	loginMsg *msg.Login,
+	LoginMsg *msg.Login,
 	serverCfg config.ServerCommonConf,
 ) *Control {
-	poolCount := loginMsg.PoolCount
+	poolCount := LoginMsg.PoolCount
 	if poolCount > int(serverCfg.MaxPoolCount) {
 		poolCount = int(serverCfg.MaxPoolCount)
 	}
 	return &Control{
 		rc:              rc,
-		pxyManager:      pxyManager,
+		PxyManager:      PxyManager,
 		pluginManager:   pluginManager,
 		authVerifier:    authVerifier,
 		conn:            ctlConn,
-		loginMsg:        loginMsg,
+		LoginMsg:        LoginMsg,
 		sendCh:          make(chan msg.Message, 10),
 		readCh:          make(chan msg.Message, 10),
 		workConnCh:      make(chan net.Conn, poolCount+10),
@@ -172,7 +172,7 @@ func NewControl(
 		poolCount:       poolCount,
 		portsUsedNum:    0,
 		lastPing:        time.Now(),
-		runID:           loginMsg.RunID,
+		runID:           LoginMsg.RunID,
 		status:          consts.Working,
 		readerShutdown:  shutdown.New(),
 		writerShutdown:  shutdown.New(),
@@ -373,14 +373,14 @@ func (ctl *Control) stoper() {
 
 	for _, pxy := range ctl.proxies {
 		pxy.Close()
-		ctl.pxyManager.Del(pxy.GetName())
+		ctl.PxyManager.Del(pxy.GetName())
 		metrics.Server.CloseProxy(pxy.GetName(), pxy.GetConf().GetBaseInfo().ProxyType)
 
 		notifyContent := &plugin.CloseProxyContent{
 			User: plugin.UserInfo{
-				User:  ctl.loginMsg.User,
-				Metas: ctl.loginMsg.Metas,
-				RunID: ctl.loginMsg.RunID,
+				User:  ctl.LoginMsg.User,
+				Metas: ctl.LoginMsg.Metas,
+				RunID: ctl.LoginMsg.RunID,
 			},
 			CloseProxy: msg.CloseProxy{
 				ProxyName: pxy.GetName(),
@@ -439,9 +439,9 @@ func (ctl *Control) manager() {
 			case *msg.NewProxy:
 				content := &plugin.NewProxyContent{
 					User: plugin.UserInfo{
-						User:  ctl.loginMsg.User,
-						Metas: ctl.loginMsg.Metas,
-						RunID: ctl.loginMsg.RunID,
+						User:  ctl.LoginMsg.User,
+						Metas: ctl.LoginMsg.Metas,
+						RunID: ctl.LoginMsg.RunID,
 					},
 					NewProxy: *m,
 				}
@@ -471,9 +471,9 @@ func (ctl *Control) manager() {
 			case *msg.Ping:
 				content := &plugin.PingContent{
 					User: plugin.UserInfo{
-						User:  ctl.loginMsg.User,
-						Metas: ctl.loginMsg.Metas,
-						RunID: ctl.loginMsg.RunID,
+						User:  ctl.LoginMsg.User,
+						Metas: ctl.LoginMsg.Metas,
+						RunID: ctl.LoginMsg.RunID,
 					},
 					Ping: *m,
 				}
@@ -507,8 +507,8 @@ func (ctl *Control) RegisterProxy(pxyMsg *msg.NewProxy) (remoteAddr string, err 
 
 	// User info
 	userInfo := plugin.UserInfo{
-		User:  ctl.loginMsg.User,
-		Metas: ctl.loginMsg.Metas,
+		User:  ctl.LoginMsg.User,
+		Metas: ctl.LoginMsg.Metas,
 		RunID: ctl.runID,
 	}
 
@@ -549,7 +549,7 @@ func (ctl *Control) RegisterProxy(pxyMsg *msg.NewProxy) (remoteAddr string, err 
 		}
 	}()
 
-	err = ctl.pxyManager.Add(pxyMsg.ProxyName, pxy)
+	err = ctl.PxyManager.Add(pxyMsg.ProxyName, pxy)
 	if err != nil {
 		return
 	}
@@ -572,7 +572,7 @@ func (ctl *Control) CloseProxy(closeMsg *msg.CloseProxy) (err error) {
 		ctl.portsUsedNum -= pxy.GetUsedPortsNum()
 	}
 	pxy.Close()
-	ctl.pxyManager.Del(pxy.GetName())
+	ctl.PxyManager.Del(pxy.GetName())
 	delete(ctl.proxies, closeMsg.ProxyName)
 	ctl.mu.Unlock()
 
@@ -580,9 +580,9 @@ func (ctl *Control) CloseProxy(closeMsg *msg.CloseProxy) (err error) {
 
 	notifyContent := &plugin.CloseProxyContent{
 		User: plugin.UserInfo{
-			User:  ctl.loginMsg.User,
-			Metas: ctl.loginMsg.Metas,
-			RunID: ctl.loginMsg.RunID,
+			User:  ctl.LoginMsg.User,
+			Metas: ctl.LoginMsg.Metas,
+			RunID: ctl.LoginMsg.RunID,
 		},
 		CloseProxy: msg.CloseProxy{
 			ProxyName: pxy.GetName(),

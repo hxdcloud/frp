@@ -38,7 +38,7 @@ import (
 )
 
 type Control struct {
-	// uniq id got from frps, attach it in loginMsg
+	// uniq id got from frps, attach it in LoginMsg
 	runID string
 
 	// manage all proxies

@@ -78,7 +78,7 @@ type Service struct {
 	CtlManager *ControlManager
 
 	// Manage all proxies
-	pxyManager *proxy.Manager
+	PxyManager *proxy.Manager
 
 	// Manage all plugins
 	pluginManager *plugin.Manager
@@ -108,7 +108,7 @@ func NewService(Cfg config.ServerCommonConf) (svr *Service, err error) {
 
 	svr = &Service{
 		CtlManager:    NewControlManager(),
-		pxyManager:    proxy.NewManager(),
+		PxyManager:    proxy.NewManager(),
 		pluginManager: plugin.NewManager(),
 		rc: &controller.ResourceController{
 			VisitorManager: visitor.NewManager(),
@@ -437,11 +437,11 @@ func (svr *Service) HandleListener(l net.Listener) {
 	}
 }
 
-func (svr *Service) RegisterControl(ctlConn net.Conn, loginMsg *msg.Login) (err error) {
+func (svr *Service) RegisterControl(ctlConn net.Conn, LoginMsg *msg.Login) (err error) {
 	// If client's RunID is empty, it's a new client, we just create a new controller.
 	// Otherwise, we check if there is one controller has the same run id. If so, we release previous controller and start new one.
-	if loginMsg.RunID == "" {
-		loginMsg.RunID, err = util.RandID()
+	if LoginMsg.RunID == "" {
+		LoginMsg.RunID, err = util.RandID()
 		if err != nil {
 			return
 		}
@@ -449,24 +449,24 @@ func (svr *Service) RegisterControl(ctlConn net.Conn, loginMsg *msg.Login) (err 
 
 	ctx := frpNet.NewContextFromConn(ctlConn)
 	xl := xlog.FromContextSafe(ctx)
-	xl.AppendPrefix(loginMsg.RunID)
+	xl.AppendPrefix(LoginMsg.RunID)
 	ctx = xlog.NewContext(ctx, xl)
 	xl.Info("client login info: ip [%s] version [%s] hostname [%s] os [%s] arch [%s]",
-		ctlConn.RemoteAddr().String(), loginMsg.Version, loginMsg.Hostname, loginMsg.Os, loginMsg.Arch)
+		ctlConn.RemoteAddr().String(), LoginMsg.Version, LoginMsg.Hostname, LoginMsg.Os, LoginMsg.Arch)
 
 	// Check client version.
-	if ok, msg := version.Compat(loginMsg.Version); !ok {
+	if ok, msg := version.Compat(LoginMsg.Version); !ok {
 		err = fmt.Errorf("%s", msg)
 		return
 	}
 
 	// Check auth.
-	if err = svr.authVerifier.VerifyLogin(loginMsg); err != nil {
+	if err = svr.authVerifier.VerifyLogin(LoginMsg); err != nil {
 		return
 	}
 
-	ctl := NewControl(ctx, svr.rc, svr.pxyManager, svr.pluginManager, svr.authVerifier, ctlConn, loginMsg, svr.Cfg)
-	if oldCtl := svr.CtlManager.Add(loginMsg.RunID, ctl); oldCtl != nil {
+	ctl := NewControl(ctx, svr.rc, svr.PxyManager, svr.pluginManager, svr.authVerifier, ctlConn, LoginMsg, svr.Cfg)
+	if oldCtl := svr.CtlManager.Add(LoginMsg.RunID, ctl); oldCtl != nil {
 		oldCtl.allShutdown.WaitDone()
 	}
 
@@ -478,7 +478,7 @@ func (svr *Service) RegisterControl(ctlConn net.Conn, loginMsg *msg.Login) (err 
 	go func() {
 		// block until control closed
 		ctl.WaitClosed()
-		svr.CtlManager.Del(loginMsg.RunID, ctl)
+		svr.CtlManager.Del(LoginMsg.RunID, ctl)
 	}()
 	return
 }
@@ -494,9 +494,9 @@ func (svr *Service) RegisterWorkConn(workConn net.Conn, newMsg *msg.NewWorkConn)
 	// server plugin hook
 	content := &plugin.NewWorkConnContent{
 		User: plugin.UserInfo{
-			User:  ctl.loginMsg.User,
-			Metas: ctl.loginMsg.Metas,
-			RunID: ctl.loginMsg.RunID,
+			User:  ctl.LoginMsg.User,
+			Metas: ctl.LoginMsg.Metas,
+			RunID: ctl.LoginMsg.RunID,
 		},
 		NewWorkConn: *newMsg,
 	}
