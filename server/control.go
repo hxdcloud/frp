@@ -54,31 +54,31 @@ func NewControlManager() *ControlManager {
 	}
 }
 
-func (cm *ControlManager) Add(runID string, ctl *Control) (oldCtl *Control) {
+func (cm *ControlManager) Add(RunID string, ctl *Control) (oldCtl *Control) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	oldCtl, ok := cm.CtlsByRunID[runID]
+	oldCtl, ok := cm.CtlsByRunID[RunID]
 	if ok {
 		oldCtl.Replaced(ctl)
 	}
-	cm.CtlsByRunID[runID] = ctl
+	cm.CtlsByRunID[RunID] = ctl
 	return
 }
 
 // we should make sure if it's the same control to prevent delete a new one
-func (cm *ControlManager) Del(runID string, ctl *Control) {
+func (cm *ControlManager) Del(RunID string, ctl *Control) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
-	if c, ok := cm.CtlsByRunID[runID]; ok && c == ctl {
-		delete(cm.CtlsByRunID, runID)
+	if c, ok := cm.CtlsByRunID[RunID]; ok && c == ctl {
+		delete(cm.CtlsByRunID, RunID)
 	}
 }
 
-func (cm *ControlManager) GetByID(runID string) (ctl *Control, ok bool) {
+func (cm *ControlManager) GetByID(RunID string) (ctl *Control, ok bool) {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
-	ctl, ok = cm.CtlsByRunID[runID]
+	ctl, ok = cm.CtlsByRunID[RunID]
 	return
 }
 
@@ -120,15 +120,15 @@ type Control struct {
 	portsUsedNum int
 
 	// last time got the Ping message
-	lastPing time.Time
+	LastPing time.Time
 
 	// A new run id will be generated when a new client login.
 	// If run id got from login message has same run id, it means it's the same client, so we can
 	// replace old controller instantly.
-	runID string
+	RunID string
 
-	// control status
-	status string
+	// control Status
+	Status string
 
 	readerShutdown  *shutdown.Shutdown
 	writerShutdown  *shutdown.Shutdown
@@ -171,9 +171,9 @@ func NewControl(
 		proxies:         make(map[string]proxy.Proxy),
 		poolCount:       poolCount,
 		portsUsedNum:    0,
-		lastPing:        time.Now(),
-		runID:           LoginMsg.RunID,
-		status:          consts.Working,
+		LastPing:        time.Now(),
+		RunID:           LoginMsg.RunID,
+		Status:          consts.Working,
 		readerShutdown:  shutdown.New(),
 		writerShutdown:  shutdown.New(),
 		managerShutdown: shutdown.New(),
@@ -188,7 +188,7 @@ func NewControl(
 func (ctl *Control) Start() {
 	loginRespMsg := &msg.LoginResp{
 		Version:       version.Full(),
-		RunID:         ctl.runID,
+		RunID:         ctl.RunID,
 		ServerUDPPort: ctl.serverCfg.BindUDPPort,
 		Error:         "",
 	}
@@ -277,8 +277,8 @@ func (ctl *Control) GetWorkConn() (workConn net.Conn, err error) {
 
 func (ctl *Control) Replaced(newCtl *Control) {
 	xl := ctl.xl
-	xl.Info("Replaced by client [%s]", newCtl.runID)
-	ctl.runID = ""
+	xl.Info("Replaced by client [%s]", newCtl.RunID)
+	ctl.RunID = ""
 	ctl.allShutdown.Start()
 }
 
@@ -426,7 +426,7 @@ func (ctl *Control) manager() {
 	for {
 		select {
 		case <-heartbeatCh:
-			if time.Since(ctl.lastPing) > time.Duration(ctl.serverCfg.HeartbeatTimeout)*time.Second {
+			if time.Since(ctl.LastPing) > time.Duration(ctl.serverCfg.HeartbeatTimeout)*time.Second {
 				xl.Warn("heartbeat timeout")
 				return
 			}
@@ -489,7 +489,7 @@ func (ctl *Control) manager() {
 					}
 					return
 				}
-				ctl.lastPing = time.Now()
+				ctl.LastPing = time.Now()
 				xl.Debug("receive heartbeat")
 				ctl.sendCh <- &msg.Pong{}
 			}
@@ -509,7 +509,7 @@ func (ctl *Control) RegisterProxy(pxyMsg *msg.NewProxy) (remoteAddr string, err 
 	userInfo := plugin.UserInfo{
 		User:  ctl.LoginMsg.User,
 		Metas: ctl.LoginMsg.Metas,
-		RunID: ctl.runID,
+		RunID: ctl.RunID,
 	}
 
 	// NewProxy will return a interface Proxy.
