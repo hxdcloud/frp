@@ -90,7 +90,7 @@ type Control struct {
 	PxyManager *proxy.Manager
 
 	// plugin manager
-	pluginManager *plugin.Manager
+	PluginManager *plugin.Manager
 
 	// verifies authentication based on selected method
 	authVerifier auth.Verifier
@@ -148,7 +148,7 @@ func NewControl(
 	ctx context.Context,
 	rc *controller.ResourceController,
 	PxyManager *proxy.Manager,
-	pluginManager *plugin.Manager,
+	PluginManager *plugin.Manager,
 	authVerifier auth.Verifier,
 	ctlConn net.Conn,
 	LoginMsg *msg.Login,
@@ -161,7 +161,7 @@ func NewControl(
 	return &Control{
 		rc:              rc,
 		PxyManager:      PxyManager,
-		pluginManager:   pluginManager,
+		PluginManager:   PluginManager,
 		authVerifier:    authVerifier,
 		conn:            ctlConn,
 		LoginMsg:        LoginMsg,
@@ -387,7 +387,7 @@ func (ctl *Control) stoper() {
 			},
 		}
 		go func() {
-			_ = ctl.pluginManager.CloseProxy(notifyContent)
+			_ = ctl.PluginManager.CloseProxy(notifyContent)
 		}()
 	}
 
@@ -446,7 +446,7 @@ func (ctl *Control) manager() {
 					NewProxy: *m,
 				}
 				var remoteAddr string
-				retContent, err := ctl.pluginManager.NewProxy(content)
+				retContent, err := ctl.PluginManager.NewProxy(content)
 				if err == nil {
 					m = &retContent.NewProxy
 					remoteAddr, err = ctl.RegisterProxy(m)
@@ -477,7 +477,7 @@ func (ctl *Control) manager() {
 					},
 					Ping: *m,
 				}
-				retContent, err := ctl.pluginManager.Ping(content)
+				retContent, err := ctl.PluginManager.Ping(content)
 				if err == nil {
 					m = &retContent.Ping
 					err = ctl.authVerifier.VerifyPing(m)
@@ -589,7 +589,7 @@ func (ctl *Control) CloseProxy(closeMsg *msg.CloseProxy) (err error) {
 		},
 	}
 	go func() {
-		_ = ctl.pluginManager.CloseProxy(notifyContent)
+		_ = ctl.PluginManager.CloseProxy(notifyContent)
 	}()
 
 	return
