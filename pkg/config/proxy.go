@@ -392,6 +392,8 @@ func (cfg *BaseProxyConf) marshalToMsg(pMsg *msg.NewProxy) {
 	pMsg.Group = cfg.Group
 	pMsg.GroupKey = cfg.GroupKey
 	pMsg.Metas = cfg.Metas
+	pMsg.LocalIP = cfg.LocalSvrConf.LocalIP
+	pMsg.LocalPort = cfg.LocalSvrConf.LocalPort
 }
 
 func (cfg *BaseProxyConf) unmarshalFromMsg(pMsg *msg.NewProxy) {
@@ -523,7 +525,8 @@ func (cfg *TCPProxyConf) Compare(cmp ProxyConf) bool {
 
 func (cfg *TCPProxyConf) UnmarshalFromMsg(pMsg *msg.NewProxy) {
 	cfg.BaseProxyConf.unmarshalFromMsg(pMsg)
-
+	cfg.LocalSvrConf.LocalIP = pMsg.LocalIP
+	cfg.LocalSvrConf.LocalPort = pMsg.LocalPort
 	// Add custom logic unmarshal if exists
 	cfg.RemotePort = pMsg.RemotePort
 }
@@ -680,7 +683,8 @@ func (cfg *UDPProxyConf) UnmarshalFromIni(prefix string, name string, section *i
 
 func (cfg *UDPProxyConf) UnmarshalFromMsg(pMsg *msg.NewProxy) {
 	cfg.BaseProxyConf.unmarshalFromMsg(pMsg)
-
+	cfg.LocalSvrConf.LocalIP = pMsg.LocalIP
+	cfg.LocalSvrConf.LocalPort = pMsg.LocalPort
 	// Add custom logic unmarshal if exists
 	cfg.RemotePort = pMsg.RemotePort
 }

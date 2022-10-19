@@ -23,6 +23,7 @@ const (
 	TypeLoginResp             = '1'
 	TypeNewProxy              = 'p'
 	TypeNewProxyResp          = '2'
+	TypeNewProxyIni           = '6'
 	TypeCloseProxy            = 'c'
 	TypeNewWorkConn           = 'w'
 	TypeReqWorkConn           = 'r'
@@ -44,6 +45,7 @@ var msgTypeMap = map[byte]interface{}{
 	TypeLoginResp:             LoginResp{},
 	TypeNewProxy:              NewProxy{},
 	TypeNewProxyResp:          NewProxyResp{},
+	TypeNewProxyIni:           NewProxyIni{},
 	TypeCloseProxy:            CloseProxy{},
 	TypeNewWorkConn:           NewWorkConn{},
 	TypeReqWorkConn:           ReqWorkConn{},
@@ -195,4 +197,108 @@ type NatHoleClientDetectOK struct{}
 
 type NatHoleSid struct {
 	Sid string `json:"sid,omitempty"`
+}
+
+type NewProxyIni struct {
+
+	// RunId client unique id
+	RunId string `ini:"run_id" json:"run_id"`
+
+	// ProxyName is the name of this
+	ProxyName string `ini:"name" json:"name"`
+	// ProxyType specifies the type of this  Valid values include "tcp",
+	// "udp", "http", "https", "stcp", and "xtcp". By default, this value is
+	// "tcp".
+	ProxyType string `ini:"type" json:"type"`
+
+	// UseEncryption controls whether or not communication with the server will
+	// be encrypted. Encryption is done using the tokens supplied in the server
+	// and client configuration. By default, this value is false.
+	UseEncryption string `ini:"use_encryption" json:"use_encryption"`
+	// UseCompression controls whether or not communication with the server
+	// will be compressed. By default, this value is false.
+	UseCompression string `ini:"use_compression" json:"use_compression"`
+	// Group specifies which group the is a part of. The server will use
+	// this information to load balance proxies in the same group. If the value
+	// is "", this will not be in a group. By default, this value is "".
+	Group string `ini:"group" json:"group"`
+	// GroupKey specifies a group key, which should be the same among proxies
+	// of the same group. By default, this value is "".
+	GroupKey string `ini:"group_key" json:"group_key"`
+
+	// ProxyProtocolVersion specifies which protocol version to use. Valid
+	// values include "v1", "v2", and "". If the value is "", a protocol
+	// version will be automatically selected. By default, this value is "".
+	ProxyProtocolVersion string `ini:"proxy_protocol_version" json:"proxy_protocol_version"`
+
+	// BandwidthLimit limit the bandwidth
+	// 0 means no limit
+	BandwidthLimit string `ini:"bandwidth_limit" json:"bandwidth_limit"`
+
+	// meta info for each proxy
+	Metas string `ini:"-" json:"metas"`
+
+	// LocalIP specifies the IP address or host name to to.
+	LocalIP string `ini:"local_ip" json:"local_ip"`
+	// LocalPort specifies the port to to.
+	LocalPort string `ini:"local_port" json:"local_port"`
+
+	// Plugin specifies what plugin should be used for ng. If this value
+	// is set, the LocalIp and LocalPort values will be ignored. By default,
+	// this value is "".
+	Plugin string `ini:"plugin" json:"plugin"`
+	// PluginParams specify parameters to be passed to the plugin, if one is
+	// being used. By default, this value is an empty map.
+	PluginParams string `ini:"-"`
+
+	// HealthCheckType specifies what protocol to use for health checking.
+	// Valid values include "tcp", "http", and "". If this value is "", health
+	// checking will not be performed. By default, this value is "".
+	//
+	// If the type is "tcp", a connection will be attempted to the target
+	// server. If a connection cannot be established, the health check fails.
+	//
+	// If the type is "http", a GET request will be made to the endpoint
+	// specified by HealthCheckURL. If the response is not a 200, the health
+	// check fails.
+	HealthCheckType string `ini:"health_check_type" json:"health_check_type"` // tcp | http
+	// HealthCheckTimeoutS specifies the number of seconds to wait for a health
+	// check attempt to connect. If the timeout is reached, this counts as a
+	// health check failure. By default, this value is 3.
+	HealthCheckTimeoutS string `ini:"health_check_timeout_s" json:"health_check_timeout_s"`
+	// HealthCheckMaxFailed specifies the number of allowed failures before the
+	// is stopped. By default, this value is 1.
+	HealthCheckMaxFailed string `ini:"health_check_max_failed" json:"health_check_max_failed"`
+	// HealthCheckIntervalS specifies the time in seconds between health
+	// checks. By default, this value is 10.
+	HealthCheckIntervalS string `ini:"health_check_interval_s" json:"health_check_interval_s"`
+	// HealthCheckURL specifies the address to send health checks to if the
+	// health check type is "http".
+	HealthCheckURL string `ini:"health_check_url" json:"health_check_url"`
+	// HealthCheckAddr specifies the address to connect to if the health check
+	// type is "tcp".
+	HealthCheckAddr string `ini:"-"`
+
+	CustomDomains string `ini:"custom_domains" json:"custom_domains"`
+	SubDomain     string `ini:"subdomain" json:"subdomain"`
+
+	Locations         string `ini:"locations" json:"locations"`
+	HTTPUser          string `ini:"http_user" json:"http_user"`
+	HTTPPwd           string `ini:"http_pwd" json:"http_pwd"`
+	HostHeaderRewrite string `ini:"host_header_rewrite" json:"host_header_rewrite"`
+	Headers           string `ini:"-" json:"headers"`
+	RouteByHTTPUser   string `ini:"route_by_http_user" json:"route_by_http_user"`
+
+	RemotePort string `ini:"remote_port" json:"remote_port"`
+
+	Multiplexer string `ini:"multiplexer"`
+
+	Role string `ini:"role" json:"role"`
+	Sk   string `ini:"sk" json:"sk"`
+}
+
+type BandwidthQuantity struct {
+	s string // MB or KB
+
+	i int64 // bytes
 }

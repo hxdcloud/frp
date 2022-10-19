@@ -323,7 +323,7 @@ func (svr *Service) login() (conn net.Conn, session *fmux.Session, err error) {
 		User:      svr.cfg.User,
 		Version:   version.Full(),
 		Timestamp: time.Now().Unix(),
-		RunID:     svr.runID,
+		RunID:     svr.cfg.ServerId,
 		Metas:     svr.cfg.Metas,
 	}
 

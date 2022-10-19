@@ -32,6 +32,8 @@ import (
 type ClientCommonConf struct {
 	auth.ClientConfig `ini:",extends"`
 
+	// ServerId specifies this frpc RunId
+	ServerId string `ini:"server_id" json:"server_id"`
 	// ServerAddr specifies the address of the server to connect to. By
 	// default, this value is "0.0.0.0".
 	ServerAddr string `ini:"server_addr" json:"server_addr"`

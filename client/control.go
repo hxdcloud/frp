@@ -17,8 +17,10 @@ package client
 import (
 	"context"
 	"crypto/tls"
+	"gopkg.in/ini.v1"
 	"io"
 	"net"
+	"os"
 	"runtime/debug"
 	"strconv"
 	"time"
@@ -176,6 +178,44 @@ func (ctl *Control) HandleNewProxyResp(inMsg *msg.NewProxyResp) {
 	} else {
 		xl.Info("[%s] start proxy success", inMsg.ProxyName)
 	}
+}
+
+func (ctl *Control) HandleNewProxyIni(p *msg.NewProxyIni) {
+	xl := ctl.xl
+
+	cfg, err := ini.Load("frpc.ini")
+	if err != nil {
+		xl.Warn("read frpc.ini error")
+		return
+	}
+
+	sec := cfg.Section(p.ProxyName)
+	sec.Key("type").SetValue(p.ProxyType)
+	sec.Key("use_encryption").SetValue(p.UseEncryption)
+	sec.Key("use_compression").SetValue(p.UseCompression)
+	sec.Key("proxy_protocol_version").SetValue(p.ProxyProtocolVersion)
+	sec.Key("bandwidth_limit").SetValue(p.BandwidthLimit)
+
+	sec.Key("local_ip").SetValue(p.LocalIP)
+	sec.Key("local_port").SetValue(p.LocalPort)
+	sec.Key("plugin").SetValue(p.Plugin)
+	sec.Key("plugin_params").SetValue(p.PluginParams)
+
+	switch p.ProxyType {
+	case "tcp":
+		sec.Key("remote_port").SetValue(p.RemotePort)
+	}
+
+	err = cfg.SaveTo("frpc.ini")
+	if err != nil {
+		xl.Warn("save to frpc.ini error")
+		return
+	}
+
+	xl.Info("receive new proxy [%s]", p.ProxyName)
+
+	os.Exit(1)
+
 }
 
 func (ctl *Control) Close() error {
@@ -377,6 +417,8 @@ func (ctl *Control) msgHandler() {
 				go ctl.HandleReqWorkConn(m)
 			case *msg.NewProxyResp:
 				ctl.HandleNewProxyResp(m)
+			case *msg.NewProxyIni:
+				ctl.HandleNewProxyIni(m)
 			case *msg.Pong:
 				if m.Error != "" {
 					xl.Error("Pong contains error: %s", m.Error)

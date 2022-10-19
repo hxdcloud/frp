@@ -16,6 +16,7 @@ package server
 
 import (
 	"encoding/json"
+	plugin "github.com/fatedier/frp/pkg/plugin/server"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -155,14 +156,15 @@ func getConfByType(proxyType string) interface{} {
 
 // Get proxy info.
 type ProxyStatsInfo struct {
-	Name            string      `json:"name"`
-	Conf            interface{} `json:"conf"`
-	TodayTrafficIn  int64       `json:"today_traffic_in"`
-	TodayTrafficOut int64       `json:"today_traffic_out"`
-	CurConns        int64       `json:"cur_conns"`
-	LastStartTime   string      `json:"last_start_time"`
-	LastCloseTime   string      `json:"last_close_time"`
-	Status          string      `json:"status"`
+	Name            string          `json:"name"`
+	Conf            interface{}     `json:"conf"`
+	TodayTrafficIn  int64           `json:"today_traffic_in"`
+	TodayTrafficOut int64           `json:"today_traffic_out"`
+	CurConns        int64           `json:"cur_conns"`
+	LastStartTime   string          `json:"last_start_time"`
+	LastCloseTime   string          `json:"last_close_time"`
+	Status          string          `json:"status"`
+	UserInfo        plugin.UserInfo `json:"user_info"`
 }
 
 type GetProxyInfoResp struct {
@@ -208,6 +210,7 @@ func (svr *Service) GetProxyStatsByType(proxyType string) (proxyInfos []*ProxySt
 				continue
 			}
 			proxyInfo.Status = consts.Online
+			proxyInfo.UserInfo = pxy.GetUserInfo()
 		} else {
 			proxyInfo.Status = consts.Offline
 		}
@@ -217,6 +220,7 @@ func (svr *Service) GetProxyStatsByType(proxyType string) (proxyInfos []*ProxySt
 		proxyInfo.CurConns = ps.CurConns
 		proxyInfo.LastStartTime = ps.LastStartTime
 		proxyInfo.LastCloseTime = ps.LastCloseTime
+
 		proxyInfos = append(proxyInfos, proxyInfo)
 	}
 	return
