@@ -80,7 +80,7 @@ func (pm *Manager) Acquire(name string, port int) (realPort int, err error) {
 	// check reserved ports first
 	if port == 0 {
 		if ctx, ok := pm.reservedPorts[name]; ok {
-			if pm.isPortAvailable(ctx.Port) {
+			if pm.IsPortAvailable(ctx.Port) {
 				realPort = ctx.Port
 				pm.usedPorts[realPort] = portCtx
 				pm.reservedPorts[name] = portCtx
@@ -99,7 +99,7 @@ func (pm *Manager) Acquire(name string, port int) (realPort int, err error) {
 			if count > maxTryTimes {
 				break
 			}
-			if pm.isPortAvailable(k) {
+			if pm.IsPortAvailable(k) {
 				realPort = k
 				pm.usedPorts[realPort] = portCtx
 				pm.reservedPorts[name] = portCtx
@@ -113,7 +113,7 @@ func (pm *Manager) Acquire(name string, port int) (realPort int, err error) {
 	} else {
 		// specified port
 		if _, ok = pm.freePorts[port]; ok {
-			if pm.isPortAvailable(port) {
+			if pm.IsPortAvailable(port) {
 				realPort = port
 				pm.usedPorts[realPort] = portCtx
 				pm.reservedPorts[name] = portCtx
@@ -132,7 +132,7 @@ func (pm *Manager) Acquire(name string, port int) (realPort int, err error) {
 	return
 }
 
-func (pm *Manager) isPortAvailable(port int) bool {
+func (pm *Manager) IsPortAvailable(port int) bool {
 	if pm.netType == "udp" {
 		addr, err := net.ResolveUDPAddr("udp", net.JoinHostPort(pm.bindAddr, strconv.Itoa(port)))
 		if err != nil {

@@ -20,7 +20,6 @@ import (
 	"gopkg.in/ini.v1"
 	"io"
 	"net"
-	"os"
 	"runtime/debug"
 	"strconv"
 	"time"
@@ -180,6 +179,26 @@ func (ctl *Control) HandleNewProxyResp(inMsg *msg.NewProxyResp) {
 	}
 }
 
+func (ctl *Control) HandleDeleteProxy(p *msg.DeleteProxy) {
+	xl := ctl.xl
+
+	cfg, err := ini.Load("frpc.ini")
+	if err != nil {
+		xl.Warn("read frpc.ini error")
+		return
+	}
+
+	cfg.DeleteSection(p.ProxyName)
+
+	xl.Info("delete proxy [%s]", p.ProxyName)
+
+	_, pxyCfgs, visitorCfgs, err := config.ParseClientConfig(FRPC_SERVICE.cfgFile)
+	err = FRPC_SERVICE.ReloadConf(pxyCfgs, visitorCfgs)
+	if err != nil {
+		return
+	}
+}
+
 func (ctl *Control) HandleNewProxyIni(p *msg.NewProxyIni) {
 	xl := ctl.xl
 
@@ -214,8 +233,11 @@ func (ctl *Control) HandleNewProxyIni(p *msg.NewProxyIni) {
 
 	xl.Info("receive new proxy [%s]", p.ProxyName)
 
-	os.Exit(1)
-
+	_, pxyCfgs, visitorCfgs, err := config.ParseClientConfig(FRPC_SERVICE.cfgFile)
+	err = FRPC_SERVICE.ReloadConf(pxyCfgs, visitorCfgs)
+	if err != nil {
+		return
+	}
 }
 
 func (ctl *Control) Close() error {
@@ -419,6 +441,8 @@ func (ctl *Control) msgHandler() {
 				ctl.HandleNewProxyResp(m)
 			case *msg.NewProxyIni:
 				ctl.HandleNewProxyIni(m)
+			case *msg.DeleteProxy:
+				ctl.HandleDeleteProxy(m)
 			case *msg.Pong:
 				if m.Error != "" {
 					xl.Error("Pong contains error: %s", m.Error)

@@ -87,7 +87,7 @@ type Service struct {
 	httpVhostRouter *vhost.Routers
 
 	// All resource managers and controllers
-	rc *controller.ResourceController
+	Rc *controller.ResourceController
 
 	// Verifies authentication based on selected method
 	authVerifier auth.Verifier
@@ -110,7 +110,7 @@ func NewService(Cfg config.ServerCommonConf) (svr *Service, err error) {
 		CtlManager:    NewControlManager(),
 		PxyManager:    proxy.NewManager(),
 		pluginManager: plugin.NewManager(),
-		rc: &controller.ResourceController{
+		Rc: &controller.ResourceController{
 			VisitorManager: visitor.NewManager(),
 			TCPPortManager: ports.NewManager("tcp", Cfg.ProxyBindAddr, Cfg.AllowPorts),
 			UDPPortManager: ports.NewManager("udp", Cfg.ProxyBindAddr, Cfg.AllowPorts),
@@ -131,7 +131,7 @@ func NewService(Cfg config.ServerCommonConf) (svr *Service, err error) {
 			return
 		}
 
-		svr.rc.TCPMuxHTTPConnectMuxer, err = tcpmux.NewHTTPConnectTCPMuxer(l, Cfg.TCPMuxPassthrough, vhostReadWriteTimeout)
+		svr.Rc.TCPMuxHTTPConnectMuxer, err = tcpmux.NewHTTPConnectTCPMuxer(l, Cfg.TCPMuxPassthrough, vhostReadWriteTimeout)
 		if err != nil {
 			err = fmt.Errorf("create vhost tcpMuxer error, %v", err)
 			return
@@ -150,16 +150,16 @@ func NewService(Cfg config.ServerCommonConf) (svr *Service, err error) {
 		svr.pluginManager.Register(plugin.NewHTTPPluginOptions(Cfg.HTTPPlugins[name]))
 		log.Info("plugin [%s] has been registered", name)
 	}
-	svr.rc.PluginManager = svr.pluginManager
+	svr.Rc.PluginManager = svr.pluginManager
 
 	// Init group controller
-	svr.rc.TCPGroupCtl = group.NewTCPGroupCtl(svr.rc.TCPPortManager)
+	svr.Rc.TCPGroupCtl = group.NewTCPGroupCtl(svr.Rc.TCPPortManager)
 
 	// Init HTTP group controller
-	svr.rc.HTTPGroupCtl = group.NewHTTPGroupController(svr.httpVhostRouter)
+	svr.Rc.HTTPGroupCtl = group.NewHTTPGroupController(svr.httpVhostRouter)
 
 	// Init TCP mux group controller
-	svr.rc.TCPMuxGroupCtl = group.NewTCPMuxGroupCtl(svr.rc.TCPMuxHTTPConnectMuxer)
+	svr.Rc.TCPMuxGroupCtl = group.NewTCPMuxGroupCtl(svr.Rc.TCPMuxHTTPConnectMuxer)
 
 	// Init 404 not found page
 	vhost.NotFoundPagePath = Cfg.Custom404Page
@@ -218,7 +218,7 @@ func NewService(Cfg config.ServerCommonConf) (svr *Service, err error) {
 		rp := vhost.NewHTTPReverseProxy(vhost.HTTPReverseProxyOptions{
 			ResponseHeaderTimeoutS: Cfg.VhostHTTPTimeout,
 		}, svr.httpVhostRouter)
-		svr.rc.HTTPReverseProxy = rp
+		svr.Rc.HTTPReverseProxy = rp
 
 		address := net.JoinHostPort(Cfg.ProxyBindAddr, strconv.Itoa(Cfg.VhostHTTPPort))
 		server := &http.Server{
@@ -256,7 +256,7 @@ func NewService(Cfg config.ServerCommonConf) (svr *Service, err error) {
 			log.Info("https service listen on %s", address)
 		}
 
-		svr.rc.VhostHTTPSMuxer, err = vhost.NewHTTPSMuxer(l, vhostReadWriteTimeout)
+		svr.Rc.VhostHTTPSMuxer, err = vhost.NewHTTPSMuxer(l, vhostReadWriteTimeout)
 		if err != nil {
 			err = fmt.Errorf("create vhost httpsMuxer error, %v", err)
 			return
@@ -278,7 +278,7 @@ func NewService(Cfg config.ServerCommonConf) (svr *Service, err error) {
 			err = fmt.Errorf("create nat hole controller error, %v", err)
 			return
 		}
-		svr.rc.NatHoleController = nc
+		svr.Rc.NatHoleController = nc
 		log.Info("nat hole udp service listen on %s", address)
 	}
 
@@ -307,8 +307,8 @@ func NewService(Cfg config.ServerCommonConf) (svr *Service, err error) {
 }
 
 func (svr *Service) Run() {
-	if svr.rc.NatHoleController != nil {
-		go svr.rc.NatHoleController.Run()
+	if svr.Rc.NatHoleController != nil {
+		go svr.Rc.NatHoleController.Run()
 	}
 	if svr.Cfg.KCPBindPort > 0 {
 		go svr.HandleListener(svr.kcpListener)
@@ -465,7 +465,7 @@ func (svr *Service) RegisterControl(ctlConn net.Conn, LoginMsg *msg.Login) (err 
 		return
 	}
 
-	ctl := NewControl(ctx, svr.rc, svr.PxyManager, svr.pluginManager, svr.authVerifier, ctlConn, LoginMsg, svr.Cfg)
+	ctl := NewControl(ctx, svr.Rc, svr.PxyManager, svr.pluginManager, svr.authVerifier, ctlConn, LoginMsg, svr.Cfg)
 	if oldCtl := svr.CtlManager.Add(LoginMsg.RunID, ctl); oldCtl != nil {
 		oldCtl.allShutdown.WaitDone()
 	}
@@ -517,6 +517,6 @@ func (svr *Service) RegisterWorkConn(workConn net.Conn, newMsg *msg.NewWorkConn)
 }
 
 func (svr *Service) RegisterVisitorConn(visitorConn net.Conn, newMsg *msg.NewVisitorConn) error {
-	return svr.rc.VisitorManager.NewConn(newMsg.ProxyName, visitorConn, newMsg.Timestamp, newMsg.SignKey,
+	return svr.Rc.VisitorManager.NewConn(newMsg.ProxyName, visitorConn, newMsg.Timestamp, newMsg.SignKey,
 		newMsg.UseEncryption, newMsg.UseCompression)
 }

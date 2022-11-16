@@ -211,6 +211,7 @@ func startService(
 		defer log.Trace("frpc service for config file [%s] stopped", cfgFile)
 	}
 	svr, errRet := client.NewService(cfg, pxyCfgs, visitorCfgs, cfgFile)
+
 	if errRet != nil {
 		err = errRet
 		return
@@ -222,9 +223,13 @@ func startService(
 		go handleSignal(svr, kcpDoneCh)
 	}
 
+	// save frpc service as global param
+	client.FRPC_SERVICE = svr
+
 	err = svr.Run()
 	if err == nil && cfg.Protocol == "kcp" {
 		<-kcpDoneCh
 	}
+
 	return
 }

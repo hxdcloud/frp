@@ -24,6 +24,7 @@ const (
 	TypeNewProxy              = 'p'
 	TypeNewProxyResp          = '2'
 	TypeNewProxyIni           = '6'
+	TypeDeleteProxy           = '7'
 	TypeCloseProxy            = 'c'
 	TypeNewWorkConn           = 'w'
 	TypeReqWorkConn           = 'r'
@@ -46,6 +47,7 @@ var msgTypeMap = map[byte]interface{}{
 	TypeNewProxy:              NewProxy{},
 	TypeNewProxyResp:          NewProxyResp{},
 	TypeNewProxyIni:           NewProxyIni{},
+	TypeDeleteProxy:           DeleteProxy{},
 	TypeCloseProxy:            CloseProxy{},
 	TypeNewWorkConn:           NewWorkConn{},
 	TypeReqWorkConn:           ReqWorkConn{},
@@ -197,6 +199,13 @@ type NatHoleClientDetectOK struct{}
 
 type NatHoleSid struct {
 	Sid string `json:"sid,omitempty"`
+}
+
+type DeleteProxy struct {
+	// RunId client unique id
+	RunId string `ini:"run_id" json:"run_id"`
+	// ProxyName is the name of this
+	ProxyName string `ini:"name" json:"name"`
 }
 
 type NewProxyIni struct {
